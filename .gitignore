@@ -1,0 +1,35 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Database
+learning_mentor.db
+
+# Generated RAG index
+pdf_chunks.json
+pdf_faiss.index
+
+# Uploaded PDFs
+*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+data/

@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+openai
+python-dotenv
+numpy
+faiss-cpu
+rank-bm25
+pydantic
+PyMuPDF
+tiktoken

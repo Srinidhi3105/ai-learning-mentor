@@ -1,0 +1,9 @@
+Transformers are neural network architectures used in large language models.
+
+Self-attention allows each token to consider other tokens in the sequence.
+
+Multi-head attention runs several attention mechanisms in parallel.
+
+Embeddings represent text as numerical vectors.
+
+RAG stands for Retrieval-Augmented Generation. It retrieves relevant information before asking the language model to generate an answer.

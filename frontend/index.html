@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        AI Learning Mentor
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+        }
+
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+
+            box-shadow:
+                0 2px 10px
+                rgba(0, 0, 0, 0.08);
+        }
+
+
+        .upload-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+
+        button {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+
+        .primary-button {
+            background: #222;
+            color: white;
+        }
+
+
+        .secondary-button {
+            background: #e8e8e8;
+        }
+
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+
+        #uploadStatus {
+            margin-top: 12px;
+            font-size: 14px;
+            white-space: pre-line;
+        }
+
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+
+        .chat-box {
+            height: 450px;
+            overflow-y: auto;
+
+            border:
+                1px solid #ddd;
+
+            border-radius: 10px;
+
+            padding: 15px;
+
+            background: #fafafa;
+
+            margin-bottom: 15px;
+        }
+
+
+        .message {
+            margin-bottom: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+
+        .user-message {
+            background: #dfefff;
+            margin-left: 15%;
+        }
+
+
+        .ai-message {
+            background: #eeeeee;
+            margin-right: 15%;
+        }
+
+
+        .message-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+
+        .sources {
+            margin-top: 10px;
+            padding-top: 8px;
+
+            border-top:
+                1px solid #ddd;
+
+            font-size: 12px;
+            color: #555;
+        }
+
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+
+        #question {
+            flex: 1;
+
+            padding: 12px;
+
+            border:
+                1px solid #ccc;
+
+            border-radius: 7px;
+
+            font-size: 15px;
+        }
+
+
+        #thinking {
+            display: none;
+
+            margin-bottom: 10px;
+
+            font-size: 13px;
+
+            color: #666;
+        }
+
+
+        .empty-message {
+            text-align: center;
+            margin-top: 170px;
+            color: #777;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <h1>
+        AI Learning Mentor
+    </h1>
+
+
+    <!-- ========================================= -->
+    <!-- PDF UPLOAD -->
+    <!-- ========================================= -->
+
+    <div class="card">
+
+
+        <h2>
+            Upload Learning Material
+        </h2>
+
+
+        <div class="upload-row">
+
+
+            <input
+                type="file"
+                id="pdfFile"
+                accept=".pdf"
+            >
+
+
+            <button
+                id="uploadButton"
+                class="primary-button"
+                onclick="uploadPDF()"
+            >
+                Upload PDF
+            </button>
+
+
+        </div>
+
+
+        <div
+            id="uploadStatus"
+        ></div>
+
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- CHAT -->
+    <!-- ========================================= -->
+
+    <div class="card">
+
+
+        <div class="chat-header">
+
+
+            <h2>
+                Ask Questions
+            </h2>
+
+
+            <button
+                class="secondary-button"
+                onclick="clearChat()"
+            >
+                Clear Chat
+            </button>
+
+
+        </div>
+
+
+        <div
+            id="chatBox"
+            class="chat-box"
+        >
+
+
+            <div
+                id="emptyMessage"
+                class="empty-message"
+            >
+                Upload a PDF and start asking questions.
+            </div>
+
+
+        </div>
+
+
+        <div id="thinking">
+
+            AI is thinking...
+
+        </div>
+
+
+        <div class="input-row">
+
+
+            <input
+                type="text"
+                id="question"
+                placeholder="Ask something about your PDF..."
+                autocomplete="off"
+            >
+
+
+            <button
+                id="askButton"
+                class="primary-button"
+                onclick="askQuestion()"
+            >
+                Ask
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+
+    // ========================================================
+    // SESSION ID
+    // ========================================================
+
+    let sessionId =
+        localStorage.getItem(
+            "learning_mentor_session_id"
+        );
+
+
+    if (!sessionId) {
+
+        sessionId =
+            crypto.randomUUID();
+
+
+        localStorage.setItem(
+            "learning_mentor_session_id",
+            sessionId
+        );
+
+    }
+
+
+    // ========================================================
+    // ELEMENT REFERENCES
+    // ========================================================
+
+    const chatBox =
+        document.getElementById(
+            "chatBox"
+        );
+
+
+    const questionInput =
+        document.getElementById(
+            "question"
+        );
+
+
+    const askButton =
+        document.getElementById(
+            "askButton"
+        );
+
+
+    const uploadButton =
+        document.getElementById(
+            "uploadButton"
+        );
+
+
+    const thinking =
+        document.getElementById(
+            "thinking"
+        );
+
+
+    const uploadStatus =
+        document.getElementById(
+            "uploadStatus"
+        );
+
+
+    // ========================================================
+    // REMOVE EMPTY MESSAGE
+    // ========================================================
+
+    function removeEmptyMessage() {
+
+        const empty =
+            document.getElementById(
+                "emptyMessage"
+            );
+
+
+        if (empty) {
+
+            empty.remove();
+
+        }
+
+    }
+
+
+    // ========================================================
+    // SHOW EMPTY MESSAGE
+    // ========================================================
+
+    function showEmptyMessage() {
+
+        chatBox.innerHTML = "";
+
+
+        const empty =
+            document.createElement(
+                "div"
+            );
+
+
+        empty.id =
+            "emptyMessage";
+
+
+        empty.className =
+            "empty-message";
+
+
+        empty.textContent =
+            "Upload a PDF and start asking questions.";
+
+
+        chatBox.appendChild(
+            empty
+        );
+
+    }
+
+
+    // ========================================================
+    // DISPLAY MESSAGE
+    // ========================================================
+
+    function addMessage(
+        role,
+        text,
+        pages = []
+    ) {
+
+        removeEmptyMessage();
+
+
+        const message =
+            document.createElement(
+                "div"
+            );
+
+
+        message.classList.add(
+            "message"
+        );
+
+
+        if (role === "user") {
+
+            message.classList.add(
+                "user-message"
+            );
+
+        }
+
+        else {
+
+            message.classList.add(
+                "ai-message"
+            );
+
+        }
+
+
+        const title =
+            document.createElement(
+                "div"
+            );
+
+
+        title.className =
+            "message-title";
+
+
+        title.textContent =
+            role === "user"
+                ? "You"
+                : "AI";
+
+
+        const content =
+            document.createElement(
+                "div"
+            );
+
+
+        content.textContent =
+            text;
+
+
+        message.appendChild(
+            title
+        );
+
+
+        message.appendChild(
+            content
+        );
+
+
+        // ------------------------------------
+        // Display source pages
+        // ------------------------------------
+
+        if (
+            role === "assistant"
+            &&
+            pages.length > 0
+        ) {
+
+            const sources =
+                document.createElement(
+                    "div"
+                );
+
+
+            sources.className =
+                "sources";
+
+
+            sources.textContent =
+                "Source pages: "
+                +
+                pages.join(", ");
+
+
+            message.appendChild(
+                sources
+            );
+
+        }
+
+
+        chatBox.appendChild(
+            message
+        );
+
+
+        chatBox.scrollTop =
+            chatBox.scrollHeight;
+
+    }
+
+
+    // ========================================================
+    // LOAD HISTORY
+    // ========================================================
+
+    async function loadHistory() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/history/"
+                    +
+                    encodeURIComponent(
+                        sessionId
+                    )
+                );
+
+
+            if (!response.ok) {
+
+                return;
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data.messages.length
+                === 0
+            ) {
+
+                return;
+
+            }
+
+
+            chatBox.innerHTML =
+                "";
+
+
+            for (
+                const message
+                of data.messages
+            ) {
+
+                addMessage(
+                    message.role,
+                    message.content,
+                    message.source_pages || []
+                );
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Could not load history:",
+                error
+            );
+
+        }
+
+    }
+
+
+    // ========================================================
+    // UPLOAD PDF
+    // ========================================================
+
+    async function uploadPDF() {
+
+        const fileInput =
+            document.getElementById(
+                "pdfFile"
+            );
+
+
+        if (
+            fileInput.files.length
+            === 0
+        ) {
+
+            uploadStatus.textContent =
+                "Please select a PDF.";
+
+            return;
+
+        }
+
+
+        const file =
+            fileInput.files[0];
+
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "file",
+            file
+        );
+
+
+        uploadButton.disabled =
+            true;
+
+
+        uploadStatus.textContent =
+            "Uploading and indexing PDF...";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/upload",
+                    {
+                        method:
+                            "POST",
+
+                        body:
+                            formData
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                uploadStatus.textContent =
+                    "Error: "
+                    +
+                    (
+                        data.detail
+                        ||
+                        "Upload failed."
+                    );
+
+                return;
+
+            }
+
+
+            uploadStatus.textContent =
+                "Uploaded successfully.\n"
+                +
+                "File: "
+                +
+                data.filename
+                +
+                "\nPages: "
+                +
+                data.pages
+                +
+                "\nChunks: "
+                +
+                data.chunks;
+
+
+            // ------------------------------------
+            // New PDF = clear old conversation
+            // ------------------------------------
+
+            await deleteHistory();
+
+
+            showEmptyMessage();
+
+
+            questionInput.focus();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+
+            uploadStatus.textContent =
+                "Unable to upload PDF.";
+
+        }
+
+        finally {
+
+            uploadButton.disabled =
+                false;
+
+        }
+
+    }
+
+
+    // ========================================================
+    // ASK QUESTION
+    // ========================================================
+
+    async function askQuestion() {
+
+        const question =
+            questionInput
+            .value
+            .trim();
+
+
+        if (!question) {
+
+            return;
+
+        }
+
+
+        addMessage(
+            "user",
+            question
+        );
+
+
+        questionInput.value =
+            "";
+
+
+        askButton.disabled =
+            true;
+
+
+        questionInput.disabled =
+            true;
+
+
+        thinking.style.display =
+            "block";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/ask",
+                    {
+                        method:
+                            "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                {
+
+                                    session_id:
+                                        sessionId,
+
+                                    question:
+                                        question
+
+                                }
+                            )
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                addMessage(
+                    "assistant",
+                    "Error: "
+                    +
+                    (
+                        data.detail
+                        ||
+                        "Unable to answer."
+                    )
+                );
+
+                return;
+
+            }
+
+
+            addMessage(
+                "assistant",
+                data.answer,
+                data.source_pages
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+
+            addMessage(
+                "assistant",
+                "Unable to contact the server."
+            );
+
+        }
+
+        finally {
+
+            askButton.disabled =
+                false;
+
+
+            questionInput.disabled =
+                false;
+
+
+            thinking.style.display =
+                "none";
+
+
+            questionInput.focus();
+
+        }
+
+    }
+
+
+    // ========================================================
+    // DELETE HISTORY
+    // ========================================================
+
+    async function deleteHistory() {
+
+        try {
+
+            await fetch(
+                "/history/"
+                +
+                encodeURIComponent(
+                    sessionId
+                ),
+                {
+                    method:
+                        "DELETE"
+                }
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Could not delete history:",
+                error
+            );
+
+        }
+
+    }
+
+
+    // ========================================================
+    // CLEAR CHAT
+    // ========================================================
+
+    async function clearChat() {
+
+        await deleteHistory();
+
+
+        showEmptyMessage();
+
+
+        questionInput.focus();
+
+    }
+
+
+    // ========================================================
+    // ENTER KEY
+    // ========================================================
+
+    questionInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter"
+                &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                askQuestion();
+
+            }
+
+        }
+    );
+
+
+    // ========================================================
+    // LOAD HISTORY WHEN PAGE OPENS
+    // ========================================================
+
+    window.addEventListener(
+        "DOMContentLoaded",
+        loadHistory
+    );
+
+
+</script>
+
+
+</body>
+
+</html>
